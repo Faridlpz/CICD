@@ -20,9 +20,7 @@ stages:
 
           - script: |
               git fetch --unshallow
-              cd $(Build.SourcesDirectory)
-              ls
-              $(Pipeline.Workspace)/downloads/gitversion $(Build.SourcesDirectory)/GitVersion.yml
+              $(Pipeline.Workspace)/downloads/gitversion $(Build.SourcesDirectory)/Azure_devops/semantic_versioning/GitVersion.yml
             displayName: Verify gitversion
 
           - script: |
