@@ -1,0 +1,18 @@
+mode: Mainline
+branches:
+  main:
+    regex: ^main$
+    is-mainline: true
+  feature:
+    regex: ^features?[/-]
+    tag: alpha
+ignore:
+  sha: []
+commit-message-incrementing: Enabled
+commit-message-increments:
+  major:
+    regex: 'major:\s.*'
+  minor:
+    regex: 'minor:\s.*'
+  patch:
+    regex: 'patch:\s.*'
