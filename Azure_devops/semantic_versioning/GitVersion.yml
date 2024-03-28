@@ -3,6 +3,9 @@ branches:
   main:
     regex: ^main$
     is-mainline: true
+  develop:
+    regex: ^develop?[/-]
+    tag: alpha
   feature:
     regex: ^features?[/-]
     tag: alpha
