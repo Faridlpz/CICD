@@ -7,4 +7,5 @@ This repository contains the Azure DevOps pipeline YAML files necessary for depl
 The repository is structured as follows:
 
 - `container/`: This directory includes the pipeline for building and deploying Docker containers.
+- `semantic_versioning/`: This directory includes the pipeline to release package using semantic_versioning.
 
