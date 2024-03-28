@@ -20,6 +20,8 @@ stages:
 
           - script: |
               git fetch --unshallow
+              cd $(Pipeline.Workspace)
+              ls
               $(Pipeline.Workspace)/downloads/gitversion $(Pipeline.Workspace)/semantic_versioning/ GitVersion.yml
             displayName: Verify gitversion
 
