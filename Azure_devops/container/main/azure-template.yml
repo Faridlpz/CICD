@@ -1,0 +1,60 @@
+parameters:
+- name: environment
+  displayName: ambiente destino
+  default: dev
+  # do NOT change these values, they are used internally on "if" conditions
+  values: ['auto', 'dev', 'uat', 'prd']
+
+trigger: none
+
+resources:
+  repositories:
+  - repository: devopsutils
+    type: bitbucket
+    endpoint: Bitbucket - connection
+    name: test/repo
+    ref: main
+
+stages:
+  - stage: Registry
+    jobs:
+    - job: Login
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+      - checkout: devopsutils
+      - checkout: self
+
+      - task: Docker@2
+        displayName: login ACR
+        inputs:
+          command: login
+          containerRegistry: InsertConnection
+
+      - script: |
+          cd devops-utils/
+          docker build -t InsertRegistryName.azurecr.io/python:3.7-slim python/main
+          docker push InsertRegistryName.azurecr.io/python:3.7-slim
+        displayName: 'docker build and push'
+
+      - task: Docker@2
+        displayName: logout ACR
+        inputs:
+          command: logout
+          containerRegistry: InsertConnection
+
+  - stage: PythonContainer
+    jobs:
+    - job: Container
+      pool:
+        vmImage: 'ubuntu-latest'
+      container:
+        image: InsertRegistryName.azurecr.io/python:3.7-slim
+        endpoint: InsertConnection
+        options: --entrypoint ""
+      steps:
+      - checkout: self
+      - script: |
+          python --version
+        displayName: 'Version'
+      

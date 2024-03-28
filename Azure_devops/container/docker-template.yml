@@ -1,0 +1,20 @@
+parameters:
+  - name: environment
+    displayName: Select environment to create the document
+    default: dev
+    values: ['dev', 'uat', 'prd']
+
+trigger: none
+
+resources:
+  repositories:
+    - repository: utils
+      type: bitbucket
+      endpoint: Bitbucket - connection
+      name: test/repo
+      ref: main
+
+extends:
+  template: python/main/azure-template.yml@utils
+  parameters:
+    environment: ${{parameters.environment}}
