@@ -20,6 +20,8 @@ stages:
 
           - script: |
               git fetch --unshallow
+              cd $(Build.SourcesDirectory)
+              ls
               $(Pipeline.Workspace)/downloads/gitversion $(Build.SourcesDirectory)/GitVersion.yml
             displayName: Verify gitversion
 
