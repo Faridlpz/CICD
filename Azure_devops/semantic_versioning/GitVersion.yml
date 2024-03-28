@@ -3,12 +3,15 @@ branches:
   main:
     regex: ^main$
     is-mainline: true
+    source-branches: [ 'develop', 'release' ]
   develop:
     regex: ^develop?[/-]
     tag: alpha
+    source-branches: []
   feature:
     regex: ^features?[/-]
     tag: alpha
+    source-branches: []
 ignore:
   sha: []
 commit-message-incrementing: Enabled
