@@ -12,10 +12,3 @@ branches:
 ignore:
   sha: []
 commit-message-incrementing: Enabled
-commit-message-increments:
-  major:
-    regex: 'major:\s.*'
-  minor:
-    regex: 'minor:\s.*'
-  patch:
-    regex: 'patch:\s.*'
