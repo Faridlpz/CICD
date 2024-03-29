@@ -9,12 +9,12 @@ jobs:
         displayName: Install newman
 
       - script: |
-          newman run $(Build.SourcesDirectory)/Azure_devops/newman/collection.json -d $(Build.SourcesDirectory)/Azure_devops/newman/data.json --reporters cli,junit --reporter-junit-export $(Build.SourcesDirectory)/Azure_devops/newman/test/Results/junitReport.xml
-        workingDirectory: $(Build.SourcesDirectory)/test
+          newman run $(Build.SourcesDirectory)/Azure_devops/newman/collection.json -d $(Build.SourcesDirectory)/Azure_devops/newman/data.json --reporters cli,junit --reporter-junit-export $(Build.SourcesDirectory)/Azure_devops/newman/junitReport.xml
+        workingDirectory: $(Build.SourcesDirectory)/
         displayName: Run API Tests
         continueOnError: true
 
       - task: PublishTestResults@2
-        displayName: Publish Test Results $(Build.SourcesDirectory)/Azure_devops/newman/test/Results/*.xml
+        displayName: Publish Test Results $(Build.SourcesDirectory)/Azure_devops/newman/*.xml
         inputs:
-          testResultsFiles: $(Build.SourcesDirectory)/Azure_devops/newman/test/Results/*.xml
+          testResultsFiles: $(Build.SourcesDirectory)/Azure_devops/newman/*.xml
