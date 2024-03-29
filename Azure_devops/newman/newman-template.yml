@@ -4,4 +4,4 @@ stages:
   - stage: API_Testing
     pool: 'ubuntu-20.04'
     jobs:
-      - template: Azure_devops/templates/newman-template-jobs.yml
+      - template: templates/newman-template-jobs.yml
