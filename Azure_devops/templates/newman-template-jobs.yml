@@ -1,0 +1,20 @@
+jobs:
+  - job: API_Test
+    displayName: API Testing Job
+    steps:
+      - script: |
+          echo Installing Newman
+          sudo npm install -g newman
+        workingDirectory: $(Build.SourcesDirectory)/Azure_devops/newman/
+        displayName: Install newman
+
+      - script: |
+          newman run $(Build.SourcesDirectory)/Azure_devops/newman/collection.json -d $(Build.SourcesDirectory)/Azure_devops/newman/data.json --reporters cli,junit --reporter-junit-export $(Build.SourcesDirectory)/Azure_devops/newman/test/Results/junitReport.xml
+        workingDirectory: $(Build.SourcesDirectory)/test
+        displayName: Run API Tests
+        continueOnError: true
+
+      - task: PublishTestResults@2
+        displayName: Publish Test Results $(Build.SourcesDirectory)/Azure_devops/newman/test/Results/*.xml
+        inputs:
+          testResultsFiles: $(Build.SourcesDirectory)/Azure_devops/newman/test/Results/*.xml

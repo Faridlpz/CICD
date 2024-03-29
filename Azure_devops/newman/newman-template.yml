@@ -1,0 +1,7 @@
+trigger: none
+
+stages:  
+  - stage: API_Testing
+    pool: 'ubuntu-20.04'
+    jobs:
+      - template: templates/newman-template-jobs.yml
