@@ -1,0 +1,83 @@
+parameters:
+  - name: environment
+    displayName: ambiente destino
+    default: dev
+    values: ['dev', 'uat', 'prd']
+
+steps:
+  - ${{ if eq(parameters.environment, 'dev') }}:
+      - task: Kubernetes@1
+        displayName: 'kubectl login aks ${{ parameters.environment }}'
+        inputs:
+          connectionType: 'Kubernetes Service Connection'
+          kubernetesServiceEndpoint: InsertConnection
+          command: 'login'
+
+  - ${{ if eq(parameters.environment, 'uat') }}:
+      - task: Kubernetes@1
+        displayName: 'kubectl login aks ${{ parameters.environment }}'
+        inputs:
+          connectionType: 'Azure Resource Manager'
+          azureSubscriptionEndpoint: InsertConnection
+          azureResourceGroup: InsertResourceGroup
+          kubernetesCluster: InsertCluster
+          useClusterAdmin: true
+          command: 'login'
+
+  - ${{ if eq(parameters.environment, 'prd') }}:
+      - task: Kubernetes@1
+        displayName: 'kubectl login aks ${{ parameters.environment }}'
+        inputs:
+          connectionType: 'Kubernetes Service Connection'
+          kubernetesServiceEndpoint: InsertConnection
+          command: 'login'
+
+  - script: |
+        kubectl run newman-aks -n test \
+          --image=InsertACR.azurecr.io/newman:1.1 \
+          --restart=Never \
+          --command -- /bin/sh -c "sleep 3600"
+    displayName: 'Create Newman Test Pod'
+
+  # Copy test files to the pod
+  - script: |
+      # Wait for the pod to be in the 'Running' state
+      kubectl wait --for=condition=Ready pod/newman-aks -n test --timeout=60s
+
+      COLLECTION_PATH=$(find newman/ -name collection.json -print -quit)
+      DATA_PATH=$(find newman/ -name data.json -print -quit)
+
+      kubectl cp $COLLECTION_PATH newman-aks:/tmp/collection.json -n test
+      kubectl cp $DATA_PATH newman-aks:/tmp/data.json -n test
+    displayName: 'Copy test files to pod'
+
+  # Execute Newman tests inside the pod
+  - script: |
+      kubectl exec newman-aks -n test -- newman run /tmp/collection.json -d /tmp/data.json --reporters cli,junit --reporter-junit-export /tmp/junitReport.xml
+    displayName: 'Run Newman Tests'
+
+  # Retrieve test report from the pod
+  - script: |
+      kubectl cp newman-aks:/tmp/junitReport.xml $(Build.ArtifactStagingDirectory)/junitReport.xml -n test
+    displayName: 'Retrieve Test Report'
+
+  # Publish test results (this is optional - adjust if you have different test result formats)
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/junitReport.xml'
+      searchFolder: '$(Build.ArtifactStagingDirectory)'
+    displayName: 'Publish Test Results'
+
+  # Clean up the pod
+  - script: |
+      kubectl delete pod newman-aks -n test
+    displayName: 'Clean up Newman Test Pod'
+
+  # Publish artifacts (this is optional - adjust if you want to store the report as an artifact)
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'newman_reports'
+      publishLocation: 'Container'
+    displayName: 'Publish Newman Report Artifacts'

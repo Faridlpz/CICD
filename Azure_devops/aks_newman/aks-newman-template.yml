@@ -1,0 +1,21 @@
+parameters:
+- name: environment
+  displayName: ambiente destino
+  default: dev
+  values: ['dev', 'uat']
+
+trigger: none
+
+stages:  
+  - stage: RunNewmanTests
+    pool:
+        vmImage: 'ubuntu-latest'
+    jobs:
+      - job: RunTestsInKubernetes
+        steps:
+          - template: templates/acr-template.yml
+            parameters:
+              environment: ${{ parameters.environment }}
+          - template: templates/aks-template.yml
+            parameters:
+              environment: ${{ parameters.environment }}
