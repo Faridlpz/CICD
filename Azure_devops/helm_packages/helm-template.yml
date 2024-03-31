@@ -5,4 +5,4 @@ stages:
     pool: 
       vmImage: 'ubuntu-20.04'
     jobs:
-      - template: aks_newman/templates/aks-template.yml
+      - template: Azure_devops/aks_newman/templates/aks-template.yml
