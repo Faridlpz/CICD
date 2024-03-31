@@ -3,7 +3,7 @@ trigger: none
 resources:
   repositories:
   - repository: myTemplates # Alias for the repository
-    type: git
+    type: github
     name: Faridlpz/CICD # Repository name in the format Organization/Repository
     ref: main
 
