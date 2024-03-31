@@ -1,8 +1,15 @@
 trigger: none
 
+resources:
+  repositories:
+  - repository: myTemplates # Alias for the repository
+    type: git
+    name: Faridlpz/CICD # Repository name in the format Organization/Repository
+    ref: main
+
 stages:  
   - stage: Helm_package
     pool: 
       vmImage: 'ubuntu-20.04'
     jobs:
-      - template: Azure_devops/aks_newman/templates/aks-template.yml
+      - template: Azure_devops/aks_newman/templates/aks-template.yml@myTemplates
