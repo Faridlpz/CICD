@@ -1,5 +1,12 @@
 trigger: none
 
+parameters:
+- name: environment
+  displayName: ambiente destino
+  default: dev
+  values: ['dev', 'uat']
+
+
 resources:
   repositories:
   - repository: myTemplates # Alias for the repository
@@ -14,3 +21,5 @@ stages:
       vmImage: 'ubuntu-20.04'
     jobs:
       - template: Azure_devops/aks_newman/templates/aks-template.yml@myTemplates
+        parameters:
+              environment: ${{ parameters.environment }}
