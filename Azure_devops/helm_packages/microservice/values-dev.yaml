@@ -1,0 +1,19 @@
+appName: test
+replicas: 2
+
+containers: 
+  name: test
+  image: nginx
+  tag: 1.2
+  port: 80
+
+configmap:
+  name: test-cm
+  data:
+    database_url: test
+    debug_mode: false
+
+hpa:
+  name: test-hpa
+  minReplicas: 1
+  maxReplicas: 3

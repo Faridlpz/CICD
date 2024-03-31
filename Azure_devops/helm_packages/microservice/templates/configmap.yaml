@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.name }}
+data:
+  # Define your configuration key-value pairs here
+  database_url: {{ .Values.configmap.data.database_url }}
+  debug_mode: {{ .Values.configmap.data.debug_mode }}
