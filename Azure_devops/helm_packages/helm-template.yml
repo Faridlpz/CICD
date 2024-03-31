@@ -22,9 +22,6 @@ stages:
     jobs:
       - job: Helm_templates
         steps:
-          - template: templates/acr-template.yml
-            parameters:
-              environment: ${{ parameters.environment }}
-          - template: templates/aks-template.yml
+          - template: Azure_devops/aks_newman/templates/aks-template.yml@myTemplates
             parameters:
               environment: ${{ parameters.environment }}
