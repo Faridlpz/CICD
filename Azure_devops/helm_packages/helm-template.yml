@@ -11,9 +11,9 @@ resources:
   repositories:
   - repository: myTemplates # Alias for the repository
     type: github
-    name: Faridlpz/CICD # Repository name in the format Organization/Repository
+    name: InsertValue # Repository name in the format Organization/Repository
     ref: main
-    endpoint: Faridlpz
+    endpoint: InsertValue
 
 stages:  
   - stage: Microservice
@@ -25,3 +25,17 @@ stages:
           - template: Azure_devops/aks_newman/templates/aks-template.yml@myTemplates
             parameters:
               environment: ${{ parameters.environment }}
+          - task: HelmInstaller@1
+            inputs:
+              helmVersionToInstall: 'latest'
+          - script: helm package microservice
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: Kubernetes service connectionType
+              KubernetesServiceEndpoint: InsertConnection
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: 'microservice/microservice-0.1.0.tgz'
+              releaseName: 'Myreponame'
+              overrideValues: 'values-${{ parameters.environment }}.yaml'
+              arguments: '--output-dir $(Build.ArtifactStagingDirectory)/rendered'
