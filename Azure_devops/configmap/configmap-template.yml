@@ -1,0 +1,158 @@
+parameters:
+  - name: environment
+    displayName: ambiente destino
+    default: dev
+    values: ['auto','dev', 'uat', 'prd']
+  - name: region
+    displayName: Seleccione la region
+    default: eu
+    values: ['eu', 'central']
+  - name: configmap
+    displayName: Provide configmap name
+    type: string
+  - name: namespace
+    displayName: Provide namespace name
+    type: string
+    
+trigger: none
+
+resources:
+  repositories:
+    - repository: utils
+      type: bitbucket
+      endpoint: Bitbucket - utils
+      name: test/utils
+      ref: main
+
+    - repository: configmap
+      type: bitbucket
+      endpoint: Bitbucket - configmap
+      name: test/configmap
+      ref: main
+
+
+stages:
+  - stage: Configmap
+    pool: 
+      vmImage: 'ubuntu-20.04'
+    ${{ if eq(parameters.region, 'eu') }}:
+      jobs:
+      - job: configmap_eu
+        workspace:
+          clean: all
+        steps:
+          - checkout: configmap
+          - checkout: self
+            persistCredentials: true
+
+          - ${{ if eq(parameters.environment, 'dev') }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: insertConnection
+                  command: login
+
+          - ${{ if eq(parameters.environment, 'uat') }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Azure Resource Manager
+                  azureSubscriptionEndpoint: insertConnection
+                  azureResourceGroup: insertConnection
+                  kubernetesCluster: insertConnection
+                  useClusterAdmin: true
+                  command: login
+            
+          - ${{ if eq(parameters.environment, 'prd') }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: insertConnection
+                  command: login
+
+          - script: |
+              sed -i "s/\${namespace}/${{ parameters.namespace }}/g" repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml
+              cat ${{parameters.configmap}}-${{ parameters.environment }}.yaml
+              configmap_name=$(kubectl apply -f "repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml" --dry-run=client -o json | jq -r '.metadata.name')
+              configmap_namespace=$(kubectl apply -f "repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml" --dry-run=client -o json | jq -r '.metadata.namespace')
+              echo "$configmap_name" 
+              echo "$configmap_namespace"
+              if kubectl get configmap "$configmap_name" -n "$configmap_namespace"  > /dev/null 2>&1; then
+                 echo "Configmap already exists. Creating backup in Artifact"
+                 kubectl get configmap "$configmap_name" -n "$configmap_namespace" -o yaml > $(System.DefaultWorkingDirectory)/configmap-backup.yaml
+                 echo $(System.DefaultWorkingDirectory)
+                 echo "##vso[artifact.upload containerfolder=backup;artifactname=${{parameters.configmap}};]$(System.DefaultWorkingDirectory)/configmap-backup.yaml"
+              else
+                echo "ConfigMap does not exist. Creating new ConfigMap..."
+                kubectl apply -f "repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml"
+              fi
+            displayName: Creating configmap for ${{parameters.configmap}}
+
+          - script: |
+              configmap_namespace=$(kubectl apply -f "repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml" --dry-run=client -o json | jq -r '.metadata.namespace')
+              kubectl get cm ${{parameters.configmap}} -n "$configmap_namespace" -o yaml
+            displayName: Getting configmaps for ${{parameters.configmap}}
+
+          
+    ${{ if eq(parameters.region, 'central') }}:
+      jobs:
+      - job: configmap_central
+        workspace:
+          clean: all
+        steps:
+          - checkout: configmap
+          - checkout: self
+            persistCredentials: true
+
+          - ${{ if eq(parameters.environment, 'prd') }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: insertConnection
+                  command: login
+
+          - ${{ if eq(parameters.environment, 'prd') }}:
+              - task: HelmDeploy@0
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: InsertConnection
+                  command: login
+
+          - ${{ if and(ne(parameters.environment, 'dev'), ne(parameters.environment, 'prd')) }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Azure Resource Manager
+                  azureSubscriptionEndpoint: InsertConnection
+                  azureResourceGroup: InsertConnection
+                  kubernetesCluster: InsertConnection
+                  useClusterAdmin: true
+                  command: login
+          
+
+          - script: |
+              sed -i "s/\${namespace}/${{ parameters.namespace }}/g" repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml
+              cat ${{parameters.configmap}}-${{ parameters.environment }}.yaml
+              configmap_name=$(kubectl apply -f "repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml" --dry-run=client -o json | jq -r '.metadata.name')
+              configmap_namespace=$(kubectl apply -f "repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml" --dry-run=client -o json | jq -r '.metadata.namespace')
+              echo "$configmap_name" 
+              echo "$configmap_namespace"
+              if kubectl get configmap "$configmap_name" -n "$configmap_namespace"  > /dev/null 2>&1; then
+                 echo "Configmap already exists. Creating backup in Artifact"
+                 kubectl get configmap "$configmap_name" -n "$configmap_namespace" -o yaml > $(System.DefaultWorkingDirectory)/configmap-backup.yaml
+                 echo $(System.DefaultWorkingDirectory)
+                 echo "##vso[artifact.upload containerfolder=backup;artifactname=${{parameters.configmap}};]$(System.DefaultWorkingDirectory)/configmap-backup.yaml"
+              else
+                echo "ConfigMap does not exist. Creating new ConfigMap..."
+                kubectl apply -f "repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml"
+              fi
+            displayName: Creating configmap for ${{parameters.configmap}}
+
+          - script: |
+              configmap_namespace=$(kubectl apply -f "repoName/${{parameters.configmap}}-${{ parameters.environment }}.yaml" --dry-run=client -o json | jq -r '.metadata.namespace')
+              kubectl get cm ${{parameters.configmap}} -n "$configmap_namespace" -o yaml
+            displayName: Getting configmaps for ${{parameters.configmap}}
