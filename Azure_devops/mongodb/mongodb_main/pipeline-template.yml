@@ -1,0 +1,57 @@
+parameters:
+  - name: environment
+    displayName: Select environment to create the document
+    default: dev
+    values: ['dev', 'uat', 'prd']
+  - name: fileName
+    displayName: Type the name of the file with the js extension
+    type: string
+
+trigger: none
+
+resources:
+  repositories:
+    - repository: cosmodb
+      type: bitbucket
+      endpoint: Bitbucket - cosmodb
+      name: ibkteam/cosmo
+      ref: main
+    - repository: utils
+      type: bitbucket
+      endpoint: Bitbucket - utils
+      name: ibkteam/utils
+      ref: main
+
+stages:
+  - stage: Documents
+    variables:
+      - group: mongo-${{parameters.environment}}
+    pool:
+      vmImage: ubuntu-latest
+    jobs:
+      - job: Insert
+        workspace:
+          clean: all
+        steps:
+          - checkout: devopsutils
+
+          - script: |
+              wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
+              echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+              sudo apt-get update
+              sudo apt-get install -y mongodb-mongosh
+            displayName: 'Install mongosh'
+
+          - checkout: cosmodb
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: InsertConnection
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Executing MongoDB script with mongosh..."
+                cd cosmodb
+                cat ${{parameters.fileName}}
+                ls
+                mongosh "$(link)" --file ${{parameters.fileName}}              

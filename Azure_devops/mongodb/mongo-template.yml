@@ -1,0 +1,25 @@
+parameters:
+  - name: environment
+    displayName: Select environment to create the document
+    default: dev
+    values: ['dev', 'uat', 'prd']
+  - name: fileName
+    displayName: Type the name of the file with the js extension
+    type: string
+
+
+trigger: none
+
+resources:
+  repositories:
+    - repository: utils
+      type: bitbucket
+      endpoint: Bitbucket - utils
+      name: ibkteam/utils
+      ref: main
+
+extends:
+  template: azure/mongodb/mongodb_main/pipeline-template.yml@utils
+  parameters:
+    environment: ${{parameters.environment}}
+    fileName: ${{parameters.fileName}}
