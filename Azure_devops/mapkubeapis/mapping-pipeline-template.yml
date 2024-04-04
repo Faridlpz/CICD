@@ -1,0 +1,142 @@
+parameters:
+  - name: environment
+    displayName: ambiente destino
+    default: dev
+    values: ['auto','dev', 'uat', 'prd']
+  - name: region
+    displayName: Seleccione la region
+    default: EU
+    values: ['EU', 'CENTRAL']
+
+trigger: none
+
+stages:
+  - stage: mapkubeapis
+    ${{ if eq(parameters.region, 'EU') }}:
+      jobs:
+      - job: mapkubeapis_eu
+        workspace:
+          clean: all
+        steps:
+          - ${{ if eq(parameters.environment, 'dev') }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: InsertConnection
+                  command: login
+
+          - ${{ if eq(parameters.environment, 'uat') }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Azure Resource Manager
+                  azureSubscriptionEndpoint: InsertConnection
+                  azureResourceGroup: InsertConnection
+                  kubernetesCluster: InsertConnection
+                  useClusterAdmin: true
+                  command: login
+            
+          - ${{ if eq(parameters.environment, 'prd') }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: InsertConnection
+                  command: login
+
+          - ${{ if eq(parameters.environment, 'prd') }}:
+              - task: HelmDeploy@0
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: InsertConnection
+                  command: login
+
+          - script: |
+              helm plugin install https://github.com/helm/helm-mapkubeapis
+              helm plugin list
+            displayName: Installing mapkubeapis
+
+          - script: |
+              cat FOLDERPATH/deprecated-apis.yaml
+            displayName: Display deprecated configuration
+
+          - script: |
+              mapfile=$(cat "FOLDERPATH/deprecated-apis.yaml")
+
+              deployments_yaml=$(cat "FOLDERPATH/deployments-${{ parameters.environment }}.yml")
+
+              # Extract the namespace and deployment values using awk and grep
+              echo "$deployments_yaml" | awk '/- name:/ {namespace=$3} /- / && !/name:/ {print "Namespace:", namespace; print "Deployment:", $2}' | while IFS= read -r line; do
+                if [[ $line == "Namespace:"* ]]; then
+                  namespace=$(echo "$line" | awk '{print $2}')
+                elif [[ $line == "Deployment:"* ]]; then
+                  deployment=$(echo "$line" | awk '{print $2}')
+                  echo "Running helm mapkubeapis for deployment: $deployment in namespace: $namespace"
+                  helm mapkubeapis --mapfile "FOLDERPATH/deprecated-apis.yaml" "$deployment" -n "$namespace"   
+                fi
+              done
+            displayName: Change from autoscaling/v2betav2 deprecated api version to autoscaling/v2
+
+
+
+          
+    ${{ if eq(parameters.region, 'CENTRAL') }}:
+      jobs:
+      - job: mapkubeapis_central
+        workspace:
+          clean: all
+        steps:
+          - ${{ if eq(parameters.environment, 'prd') }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: InsertConnection
+                  command: login
+
+          - ${{ if eq(parameters.environment, 'prd') }}:
+              - task: HelmDeploy@0
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Kubernetes Service Connection
+                  kubernetesServiceEndpoint: InsertConnection
+                  command: login
+
+          - ${{ if and(ne(parameters.environment, 'dev'), ne(parameters.environment, 'prd')) }}:
+              - task: Kubernetes@1
+                displayName: kubectl login aks ${{parameters.environment}}
+                inputs:
+                  connectionType: Azure Resource Manager
+                  azureSubscriptionEndpoint: InsertConnection
+                  azureResourceGroup: InsertConnection
+                  kubernetesCluster: InsertConnection
+                  useClusterAdmin: true
+                  command: login
+          
+          - script: |
+              helm plugin install https://github.com/helm/helm-mapkubeapis
+              helm plugin list
+            displayName: Installing mapkubeapis
+
+          - script: |
+              cat FOLDERPATH/deprecated-apis.yaml
+            displayName: Display deprecated configuration
+
+          - script: |
+              mapfile=$(cat "FOLDERPATH/deprecated-apis.yaml")
+
+              deployments_yaml=$(cat "FOLDERPATH/deployments-${{ parameters.environment }}.yml")
+
+              # Extract the namespace and deployment values using awk and grep
+              echo "$deployments_yaml" | awk '/- name:/ {namespace=$3} /- / && !/name:/ {print "Namespace:", namespace; print "Deployment:", $2}' | while IFS= read -r line; do
+                if [[ $line == "Namespace:"* ]]; then
+                  namespace=$(echo "$line" | awk '{print $2}')
+                elif [[ $line == "Deployment:"* ]]; then
+                  deployment=$(echo "$line" | awk '{print $2}')
+                  echo "Running helm mapkubeapis for deployment: $deployment in namespace: $namespace"
+                  helm mapkubeapis --mapfile "FOLDERPATH/deprecated-apis.yaml" "$deployment" -n "$namespace"   
+                fi
+              done
+            displayName: Change from autoscaling/v2betav2 deprecated api version to autoscaling/v2

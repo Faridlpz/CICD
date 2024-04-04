@@ -9,3 +9,4 @@ The repository is structured as follows:
 - `help_package/`: This directory contains file for setting up and upgrading package in helm
 - `mongodb/`: This directory contains file to insert documents into mongodb
 - `configmap/`: This directory contains file to deploy configmaps in kubernetes
+- `mapkubeapis/`: This directory contains file to patch hpa from v2beta2 to v2
