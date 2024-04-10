@@ -1,0 +1,37 @@
+name: simple ci cd
+run-name: ${{ github.actor }} is practicing GitHub Actions
+on: [push]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lint Action 
+        uses: wearerequired/lint-action@v2.3.0
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14' # Choose your desired Node.js version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build # Modify this command based on your project setup
+
+      - name: Run tests
+        run: npm test
+      
+  # deploy:
+  #   needs: test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: CD
+  #       uses: actions/checkout@v4
+
